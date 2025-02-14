@@ -1,7 +1,6 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, FlatList, ActivityIndicator, StyleSheet, Image, TextInput, Platform } from 'react-native';
-import * as FileSystem from 'expo-file-system';
-import { fetchCharacters } from '../services/marvelApi';
+import { View, Text, FlatList, ActivityIndicator, StyleSheet, Image, TextInput } from 'react-native';
+import { fetchAvengersCharacters } from '../services/marvelApi'; // Importer la fonction fetchAvengersCharacters
 
 interface MarvelCharacter {
   id: number;
@@ -13,78 +12,50 @@ interface MarvelCharacter {
   description: string;
 }
 
-const CharacterList: React.FC = () => {
-  const [characters, setCharacters] = useState<MarvelCharacter[]>([]);
+const AvengersCharacterList: React.FC = () => {
+  const [characters, setCharacters] = useState<MarvelCharacter[]>([]); // Liste des personnages Avengers
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string>('');
   const [offset, setOffset] = useState<number>(0); // Pagination offset
-  const [hasMore, setHasMore] = useState<boolean>(true); // More characters to load
-  const [searchQuery, setSearchQuery] = useState<string>(''); // Search query
+  const [hasMore, setHasMore] = useState<boolean>(true); // Plus de personnages à charger
+  const [searchQuery, setSearchQuery] = useState<string>(''); // Query pour la recherche
 
-  // Load characters either from file, localStorage, or API
-  const loadCharacters = async () => {
-    if (loading || !hasMore) return; // Prevent multiple fetches or unnecessary loading
+  // Charger les personnages Avengers
+  const loadAvengersCharacters = async () => {
+    if (loading || !hasMore) return; // Empêcher les multiples requêtes
 
     setLoading(true);
 
     try {
-      if (Platform.OS !== 'web') {
-        const filePath = FileSystem.documentDirectory + 'marvelCharacters.json';
-
-        const fileExists = await FileSystem.getInfoAsync(filePath);
-        if (fileExists.exists) {
-          const fileContent = await FileSystem.readAsStringAsync(filePath);
-          const charactersData = JSON.parse(fileContent);
-          setCharacters(charactersData);
-        } else {
-          loadPageCharacters();
-        }
-      } else {
-        const storedCharacters = localStorage.getItem('marvelCharacters');
-        if (storedCharacters) {
-          const charactersData = JSON.parse(storedCharacters);
-          setCharacters(charactersData);
-        } else {
-          loadPageCharacters();
-        }
+      const response = await fetchAvengersCharacters(offset); // Appeler la fonction pour récupérer les personnages
+      if (response?.data?.results) {
+        const newCharacters = response.data.results;
+        setCharacters((prev) => [...prev, ...newCharacters]); // Ajouter les nouveaux personnages à l'ancienne liste
+        setOffset((prev) => prev + 20); // Mettre à jour l'offset pour la pagination
+        setHasMore(newCharacters.length === 20); // Vérifier s'il y a encore plus de personnages à charger
       }
     } catch (err) {
-      setError('Failed to fetch characters.');
+      setError('Failed to fetch Avengers characters.');
     } finally {
       setLoading(false);
     }
   };
 
-  // Fetch next page of characters from the API
-  const loadPageCharacters = async () => {
-    try {
-      const response = await fetchCharacters(offset);
-      if (response?.data?.results) {
-        const newCharacters = response.data.results;
-        setCharacters((prev) => [...prev, ...newCharacters]);
-        setOffset((prev) => prev + 20); // Update offset for pagination
-        setHasMore(newCharacters.length === 20); // Check if there are more characters
-      }
-    } catch (err) {
-      setError('Failed to fetch characters.');
-    }
-  };
-
-  // Filter characters by search query
+  // Filtrer les personnages en fonction de la recherche
   const filteredCharacters = characters.filter((character) =>
     character.name.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
-  // Load characters when component mounts or when offset changes
+  // Charger les personnages Avengers lors du montage du composant ou lorsqu'il y a un changement d'offset
   useEffect(() => {
-    loadCharacters();
+    loadAvengersCharacters();
   }, [offset]);
 
   if (loading && characters.length === 0) {
     return (
       <View style={styles.centered}>
         <ActivityIndicator size="large" color="#0000ff" />
-        <Text>Loading characters...</Text>
+        <Text>Loading Avengers characters...</Text>
       </View>
     );
   }
@@ -99,15 +70,15 @@ const CharacterList: React.FC = () => {
 
   return (
     <View style={styles.container}>
-      {/* Search bar */}
+      {/* Barre de recherche */}
       <TextInput
         style={styles.searchInput}
-        placeholder="Search characters..."
+        placeholder="Search Avengers characters..."
         value={searchQuery}
         onChangeText={setSearchQuery}
       />
 
-      {/* Display filtered character list */}
+      {/* Affichage de la liste filtrée des personnages */}
       <FlatList
         data={filteredCharacters}
         keyExtractor={(item) => item.id.toString()}
@@ -121,7 +92,7 @@ const CharacterList: React.FC = () => {
           );
         }}
         onEndReached={() => {
-          if (!loading && hasMore) loadCharacters();
+          if (!loading && hasMore) loadAvengersCharacters(); // Charger plus de personnages
         }}
         onEndReachedThreshold={0.5}
       />
@@ -172,4 +143,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default CharacterList;
+export default AvengersCharacterList;
