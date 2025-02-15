@@ -17,7 +17,7 @@ const getTimestamp = () => new Date().getTime().toString();
 const getHash = (ts: string) => MD5(ts + PRIVATE_KEY + API_KEY).toString();
 
 
-// Fonction pour récupérer les personnages associés à l'événement Avengers
+// Fonction pour récupérer les personnages associés aux événements Avengers et X-Men
 export const fetchAvengersAndXMenCharacters = async (offset = 0, limit = 80) => {
   const ts = getTimestamp();
   const hash = getHash(ts);
@@ -36,56 +36,36 @@ export const fetchAvengersAndXMenCharacters = async (offset = 0, limit = 80) => 
       const avengersEvent = eventResponse.data.data.results.find((event: { title: string }) =>
         event.title.toLowerCase().includes('avengers')
       );
-      console.log('Avengers Event:', avengersEvent);
+      const xmenEvent = eventResponse.data.data.results.find((event: { title: string }) =>
+        event.title.toLowerCase().includes('x-men')
+      );
 
-      if (avengersEvent) {
-        const avengersEventId = avengersEvent.id;
-        console.log('Avengers Event ID:', avengersEventId);
-
-        const avengersCharactersResponse = await axios.get(`${BASE_URL}/${avengersEventId}/characters`, {
-          params: { ts, apikey: API_KEY, hash, offset, limit },
-          headers: { 'Content-Type': 'application/json' },
-        });
+      if (avengersEvent && xmenEvent) {
+        const [avengersCharactersResponse, xmenCharactersResponse] = await Promise.all([
+          axios.get(`${BASE_URL}/${avengersEvent.id}/characters`, {
+            params: { ts, apikey: API_KEY, hash, offset, limit },
+            headers: { 'Content-Type': 'application/json' },
+          }),
+          axios.get(`${BASE_URL}/${xmenEvent.id}/characters`, {
+            params: { ts, apikey: API_KEY, hash, offset, limit },
+            headers: { 'Content-Type': 'application/json' },
+          }),
+        ]);
 
         const avengersCharacters = avengersCharactersResponse.data;
+        const xmenCharacters = xmenCharactersResponse.data;
+
         console.log('Avengers Characters:', avengersCharacters);
+        console.log('X-Men Characters:', xmenCharacters);
 
-        const xmenEventResponse = await axios.get(`${BASE_URL}`, {
-          params: { ts, apikey: API_KEY, hash, offset, limit },
-          headers: { 'Content-Type': 'application/json' },
-        });
-
-        console.log('X-Men Event Response:', xmenEventResponse.data);
-
-        if (xmenEventResponse.data.data && xmenEventResponse.data.data.results) {
-          console.log('All X-Men Events:', xmenEventResponse.data.data.results);
-
-          const xmenEvent = xmenEventResponse.data.data.results.find((event: { title: string }) =>
-            event.title.toLowerCase().includes('x-men')
-          );
-          console.log('X-Men Event:', xmenEvent);
-
-          if (xmenEvent) {
-            const xmenEventId = xmenEvent.id;
-            console.log('X-Men Event ID:', xmenEventId);
-
-            const xmenCharactersResponse = await axios.get(`${BASE_URL}/${xmenEventId}/characters`, {
-              params: { ts, apikey: API_KEY, hash, offset, limit },
-              headers: { 'Content-Type': 'application/json' },
-            });
-
-            const xmenCharacters = xmenCharactersResponse.data;
-            console.log('X-Men Characters:', xmenCharacters);
-
-            return { avengers: avengersCharacters, xmen: xmenCharacters };
-          } else {
-            throw new Error('X-Men event not found');
-          }
-        } else {
-          throw new Error('No X-Men events found or incorrect response format');
-        }
+        return {
+          avengers: avengersCharacters,
+          xmen: xmenCharacters,
+          avengersEvent: avengersEvent.title,
+          xmenEvent: xmenEvent.title,
+        };
       } else {
-        throw new Error('Avengers event not found');
+        throw new Error('Avengers or X-Men event not found');
       }
     } else {
       throw new Error('No events found or incorrect response format');

@@ -12,7 +12,6 @@ export default function RootLayout() {
       <Tabs.Screen 
         name="character-list" 
         options={{ tabBarLabel: 'Characters' }} 
-        
       />
     </Tabs>
   );

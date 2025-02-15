@@ -5,7 +5,7 @@ export default function Index() {
   return (
     <View style={styles.container}>
       <Text style={styles.text}>Hello World</Text>
-      <Link href="character-list" style={styles.button}>
+      <Link href="/character-list" style={styles.button}>
         Go to character list
       </Link>
     </View>

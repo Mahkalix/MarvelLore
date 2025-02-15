@@ -1,7 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import { View, Text, FlatList, ActivityIndicator, StyleSheet, Image, TextInput, Dimensions } from 'react-native';
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import { fetchAvengersAndXMenCharacters } from '../../services/marvelApi';
+import { fetchAvengersAndXMenCharacters } from '../services/marvelApi';
+import { getStoredData, storeData } from '../utils/storage'; // Import storage utility
+import { Link, RelativePathString } from 'expo-router';
 
 interface MarvelCharacter {
   id: number;
@@ -11,6 +12,7 @@ interface MarvelCharacter {
     extension: string;
   };
   description: string;
+  event?: string; // Added event property
 }
 
 const CharacterList: React.FC = () => {
@@ -20,39 +22,11 @@ const CharacterList: React.FC = () => {
   const [error, setError] = useState<string>('');
   const [offset, setOffset] = useState<number>(0);
   const [hasMore, setHasMore] = useState<boolean>(true);
+  const limit = 20; // Define the limit variable
   const [searchQuery, setSearchQuery] = useState<string>('');
 
   const { width } = Dimensions.get('window');
   const numColumns = width > 768 ? 4 : 2;
-
-  const getStoredData = async () => {
-    try {
-      const storedData = await AsyncStorage.getItem('marvel_characters');
-      if (storedData) {
-        return JSON.parse(storedData);
-      } else if (typeof window !== 'undefined') {
-        const storedDataWeb = localStorage.getItem('marvel_characters');
-        if (storedDataWeb) {
-          return JSON.parse(storedDataWeb);
-        }
-      }
-      return [];
-    } catch (error) {
-      console.error('Error retrieving stored data', error);
-      return [];
-    }
-  };
-
-  const storeData = async (data: any) => {
-    try {
-      await AsyncStorage.setItem('marvel_characters', JSON.stringify(data));
-      if (typeof window !== 'undefined') {
-        localStorage.setItem('marvel_characters', JSON.stringify(data));
-      }
-    } catch (error) {
-      console.error('Error storing data', error);
-    }
-  };
 
   const loadMarvelCharacters = async () => {
     if (loading || !hasMore) return;
@@ -60,23 +34,31 @@ const CharacterList: React.FC = () => {
     setLoading(true);
 
     try {
-      const storedData = await getStoredData();
+      const storedData = await getStoredData('marvel_characters');
       if (storedData?.avengers && storedData?.xmen) {
         setAvengersCharacters(storedData.avengers || []);
         setXmenCharacters(storedData.xmen || []);
       } else {
         const response = await fetchAvengersAndXMenCharacters(offset);
         if (response?.avengers?.data?.results && response?.xmen?.data?.results) {
-          const newAvengers = response.avengers.data.results;
-          const newXmen = response.xmen.data.results;
+          const newAvengers = response.avengers.data.results.map((character: MarvelCharacter) => ({
+            ...character,
+            event: response.avengersEvent,
+          }));
+          const newXmen = response.xmen.data.results.map((character: MarvelCharacter) => ({
+            ...character,
+            event: response.xmenEvent,
+          }));
 
           setAvengersCharacters((prev) => [...prev, ...newAvengers]);
           setXmenCharacters((prev) => [...prev, ...newXmen]);
 
-          storeData({ avengers: [...avengersCharacters, ...newAvengers], xmen: [...xmenCharacters, ...newXmen] });
+          storeData('marvel_characters', { avengers: [...avengersCharacters, ...newAvengers], xmen: [...xmenCharacters, ...newXmen] });
 
-          setOffset((prev) => prev + 20);
-          setHasMore(newAvengers.length === 20 || newXmen.length === 20);
+          setOffset((prev) => prev + limit);
+          setHasMore(newAvengers.length === limit || newXmen.length === limit);
+        } else {
+          setHasMore(false);
         }
       }
     } catch (err) {
@@ -117,6 +99,17 @@ const CharacterList: React.FC = () => {
     );
   }
 
+  const renderCharacterItem = ({ item }: { item: MarvelCharacter }) => {
+    const imageUrl = `${item.thumbnail.path}.${item.thumbnail.extension}`;
+    return (
+      <Link href={(`/character/${item.id}` as unknown) as RelativePathString} style={styles.card}>
+        <Image source={{ uri: imageUrl }} style={styles.image} />
+        <Text style={styles.name}>{item.name}</Text>
+        <Text style={styles.event}>{item.event}</Text>
+      </Link>
+    );
+  };
+
   return (
     <View style={styles.container}>
       <View style={styles.searchContainer}>
@@ -135,15 +128,7 @@ const CharacterList: React.FC = () => {
         ) || []}
         key={numColumns}
         keyExtractor={(item) => item.id.toString()}
-        renderItem={({ item, index }) => {
-          const imageUrl = `${item.thumbnail.path}.${item.thumbnail.extension}`;
-          return (
-            <View style={styles.card}>
-              <Image source={{ uri: imageUrl }} style={styles.image} />
-              <Text style={styles.name}>{item.name}</Text>
-            </View>
-          );
-        }}
+        renderItem={renderCharacterItem}
         numColumns={numColumns}
         onEndReached={() => {
           if (!loading && hasMore) loadMarvelCharacters();
@@ -190,15 +175,19 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   image: {
-    width: '100%',
-    height: undefined,
-    aspectRatio: 1,
+    width: 150, // Set a fixed width for the image
+    height: 150, // Set a fixed height for the image
     marginBottom: 8,
     borderRadius: 8,
   },
   name: {
     fontSize: 14,
     fontWeight: 'bold',
+    textAlign: 'center',
+  },
+  event: {
+    fontSize: 12,
+    color: '#666',
     textAlign: 'center',
   },
 });
