@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, FlatList, ActivityIndicator, StyleSheet, Image, TextInput, Dimensions } from 'react-native';
+import { View, Text, FlatList, ActivityIndicator, StyleSheet, Image, TextInput, Dimensions, Platform } from 'react-native';
 import { fetchAvengersAndXMenCharacters } from '../services/marvelApi';
 import { getStoredData, storeData } from '../utils/storage'; // Import storage utility
 import { Link, RelativePathString } from 'expo-router';
@@ -99,11 +99,15 @@ const CharacterList: React.FC = () => {
     );
   }
 
-  const renderCharacterItem = ({ item }: { item: MarvelCharacter }) => {
+  const renderCharacterItem = ({ item, index }: { item: MarvelCharacter, index: number }) => {
     const imageUrl = `${item.thumbnail.path}.${item.thumbnail.extension}`;
+    const isLastItem = index === filteredCharacters.length - 1; // Check if it's the last item in the list
     return (
       <Link href={(`/character/${item.id}` as unknown) as RelativePathString} style={styles.card}>
-        <Image source={{ uri: imageUrl }} style={styles.image} />
+        <Image
+          source={{ uri: imageUrl }}
+          style={[styles.image, isLastItem && { width: width > 768 ? '25%' : '50%' }]} // Adjust the width for the last image
+        />
         <Text style={styles.name}>{item.name}</Text>
         <Text style={styles.event}>{item.event}</Text>
       </Link>
@@ -172,23 +176,38 @@ const styles = StyleSheet.create({
     backgroundColor: '#f9f9f9',
     padding: 8,
     borderRadius: 8,
+    display: 'flex',
     alignItems: 'center',
+    flexDirection: 'column',
+    textAlign: 'center',
   },
   image: {
-    width: 150, // Set a fixed width for the image
-    height: 150, // Set a fixed height for the image
+    width: '100%', 
+    height: 150,
     marginBottom: 8,
     borderRadius: 8,
   },
   name: {
+    width: '100%', 
     fontSize: 14,
     fontWeight: 'bold',
     textAlign: 'center',
+    marginTop: 10,
+    display: 'flex',
+    justifyContent: 'center',
   },
   event: {
     fontSize: 12,
     color: '#666',
     textAlign: 'center',
+    ...Platform.select({
+      web: {
+        display: 'flex', // Ensure the event is displayed below the title on web
+      },
+      default: {
+        justifyContent: 'center', // Center the event on mobile
+      },
+    }),
   },
 });
 
