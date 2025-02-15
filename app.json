@@ -40,6 +40,10 @@
     ],
     "experiments": {
       "typedRoutes": true
+    },
+    "extra": {
+      "API_KEY": "0f257f96da6d8d296deba80b8e15137a", 
+      "PRIVATE_KEY" : "d1d7ee6e78d02aeaefde8476aea9bd88d3c515a4"
     }
   }
 }
