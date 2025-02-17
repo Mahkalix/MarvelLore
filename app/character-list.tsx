@@ -1,11 +1,9 @@
 import React, { useEffect, useState } from 'react';
-import { 
-  View, Text, FlatList, ActivityIndicator, StyleSheet, Image, TextInput, 
-  Dimensions, TouchableOpacity, ImageBackground 
-} from 'react-native';
+import { View, Text, FlatList, ActivityIndicator, StyleSheet, Image, TextInput, Dimensions, TouchableOpacity, ImageBackground } from 'react-native';
 import { fetchAvengersAndXMenCharacters } from '../services/marvelApi';
 import { getStoredData, storeData } from '../utils/storage';
-import { Link } from 'expo-router';
+import { Link, useRouter } from 'expo-router';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 interface MarvelCharacter {
   id: number;
@@ -26,10 +24,22 @@ const CharacterList: React.FC = () => {
   const [offset, setOffset] = useState<number>(0);
   const [hasMore, setHasMore] = useState<boolean>(true);
   const [searchQuery, setSearchQuery] = useState<string>('');
+  const router = useRouter();
 
   const { width } = Dimensions.get('window');
   const numColumns = width > 768 ? 4 : 2;
   const limit = 20;
+
+  useEffect(() => {
+    const checkAuthToken = async () => {
+      const token = await AsyncStorage.getItem('authToken');
+      if (!token) {
+        router.push('/login');
+      }
+    };
+
+    checkAuthToken();
+  }, []);
 
   const loadMarvelCharacters = async () => {
     if (loading || !hasMore) return;
@@ -115,14 +125,22 @@ const CharacterList: React.FC = () => {
       style={styles.backgroundImage}
     >
       <View style={styles.container}>
-        <View style={styles.searchContainer}>
-          <Text style={styles.searchIcon}>🔍</Text>
-          <TextInput
-            style={styles.searchInput}
-            placeholder="Search Marvel characters..."
-            value={searchQuery}
-            onChangeText={setSearchQuery}
-          />
+        <View style={styles.header}>
+          <View style={styles.searchContainer}>
+            <Text style={styles.searchIcon}>🔍</Text>
+            <TextInput
+              style={styles.searchInput}
+              placeholder="Search Marvel characters..."
+              value={searchQuery}
+              onChangeText={setSearchQuery}
+            />
+          </View>
+          <Link href="/account" asChild>
+  <TouchableOpacity style={styles.accountIcon}>
+    <Text style={styles.accountIconText}>👤</Text>
+  </TouchableOpacity>
+</Link>
+
         </View>
 
         <FlatList
@@ -155,6 +173,12 @@ const styles = StyleSheet.create({
     padding: 16,
     
   },
+  header: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 16,
+  },
   searchContainer: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -162,8 +186,9 @@ const styles = StyleSheet.create({
     color: '#fff',
     borderWidth: 1,
     borderRadius: 8,
-    marginBottom: 16,
     paddingHorizontal: 8,
+    flex: 1,
+    marginRight: 16,
   },
   searchIcon: {
     fontSize: 20,
@@ -173,6 +198,13 @@ const styles = StyleSheet.create({
   searchInput: {
     flex: 1,
     height: 40,
+    color: '#fff',
+  },
+  accountIcon: {
+    padding: 8,
+  },
+  accountIconText: {
+    fontSize: 24,
     color: '#fff',
   },
   centered: {

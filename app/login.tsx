@@ -1,41 +1,87 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, ImageBackground, Platform } from 'react-native';
-import { Link } from 'expo-router';
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, ImageBackground, Platform, Alert, ActivityIndicator } from 'react-native';
+import { useRouter } from 'expo-router';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 export default function Login() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
+  const router = useRouter();
 
-  const handleLogin = () => {
-    // Handle login logic
+  // Fonction pour valider les champs
+  const validateInputs = () => {
+    if (!email || !password) {
+      Alert.alert('Erreur', 'Veuillez remplir tous les champs');
+      return false;
+    }
+    if (!/\S+@\S+\.\S+/.test(email)) {
+      Alert.alert('Erreur', 'Adresse email invalide');
+      return false;
+    }
+    return true;
+  };
+
+  // Fonction pour gérer la connexion
+  const handleLogin = async () => {
+    if (!validateInputs()) return;
+
+    setIsLoading(true);
+
+    try {
+      const response = await fetch('http://localhost:4000/login', {  // Remplace par ton URL d'API
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password }),
+      });
+
+      const data = await response.json();
+      setIsLoading(false);
+
+      if (response.ok) {
+        // Stocker le token dans AsyncStorage
+        await AsyncStorage.setItem('authToken', data.token);
+        Alert.alert('Succès', 'Connexion réussie');
+        router.push('/character-list'); // Page d'accueil après connexion
+      } else {
+        Alert.alert('Erreur', data.error || 'Échec de la connexion');
+      }
+    } catch (error) {
+      console.error('Error during login:', error);
+      setIsLoading(false);
+      Alert.alert('Erreur', 'Une erreur est survenue');
+    }
   };
 
   return (
     <View style={styles.webWrapper}>
       <ImageBackground source={require('../assets/images/marvelbg.jpg')} style={styles.background} resizeMode="cover">
         <View style={styles.container}>
-          <Text style={styles.title}>Login</Text>
+          <Text style={styles.title}>Connexion</Text>
           <TextInput
             style={styles.input}
             placeholder="Email"
             value={email}
             onChangeText={setEmail}
+            keyboardType="email-address"
           />
           <TextInput
             style={styles.input}
-            placeholder="Password"
+            placeholder="Mot de passe"
             value={password}
             onChangeText={setPassword}
             secureTextEntry
           />
-          <TouchableOpacity style={styles.button} onPress={handleLogin}>
-            <Text style={styles.buttonText}>Login</Text>
+          <TouchableOpacity style={styles.button} onPress={handleLogin} disabled={isLoading}>
+            {isLoading ? (
+              <ActivityIndicator size="small" color="#fff" />
+            ) : (
+              <Text style={styles.buttonText}>Se connecter</Text>
+            )}
           </TouchableOpacity>
-          <Link href="/register" asChild>
-            <TouchableOpacity style={styles.button}>
-              <Text style={styles.buttonText}>Register</Text>
-            </TouchableOpacity>
-          </Link>
+          <TouchableOpacity onPress={() => router.push('/register')}>
+            <Text style={styles.registerLink}>Pas de compte ? S'inscrire</Text>
+          </TouchableOpacity>
         </View>
       </ImageBackground>
     </View>
@@ -99,5 +145,10 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontSize: 16,
     fontWeight: 'bold',
+  },
+  registerLink: {
+    color: '#fff',
+    marginTop: 10,
+    textDecorationLine: 'underline',
   },
 });

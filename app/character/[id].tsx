@@ -1,8 +1,9 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, ActivityIndicator, Image, ImageBackground, StyleSheet, ScrollView, TextInput } from 'react-native';
-import { useLocalSearchParams } from 'expo-router'; // Pour récupérer les paramètres d'URL
+import { View, Text, ActivityIndicator, Image, ImageBackground, StyleSheet, ScrollView, TextInput, TouchableOpacity } from 'react-native';
+import { useLocalSearchParams, useRouter, Link } from 'expo-router'; // Pour récupérer les paramètres d'URL
 import { fetchAvengersAndXMenCharacters } from '../../services/marvelApi'; 
 import { getStoredData, storeData } from '../../utils/storage'; // Import storage utility
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 interface Url {
   type: string;
@@ -41,12 +42,24 @@ const CharacterDetail = () => {
   const [character, setCharacter] = useState<LocalMarvelCharacter | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string>('');
+  const router = useRouter();
   
   // State pour la recherche dans chaque catégorie
   const [searchComics, setSearchComics] = useState('');
   const [searchStories, setSearchStories] = useState('');
   const [searchEvents, setSearchEvents] = useState('');
   const [searchSeries, setSearchSeries] = useState('');
+
+  useEffect(() => {
+    const checkAuthToken = async () => {
+      const token = await AsyncStorage.getItem('authToken');
+      if (!token) {
+        router.push('/login');
+      }
+    };
+
+    checkAuthToken();
+  }, []);
 
   useEffect(() => {
     const fetchCharacter = async () => {
@@ -112,6 +125,14 @@ const CharacterDetail = () => {
           style={styles.backgroundImage}
         >
     <ScrollView contentContainerStyle={styles.container}>
+      <View style={styles.header}>
+         <Link href="/character-list" asChild>
+
+          <TouchableOpacity style={styles.accountIcon}>
+            <Text style={styles.accountIconText}>👤</Text>
+          </TouchableOpacity>
+        </Link>
+      </View>
       <Image source={{ uri: imageUrl }} style={styles.image} />
       <Text style={styles.modified}>Modified: {new Date(character.modified).toLocaleDateString()}</Text>
       <Text style={styles.name}>{character.name}</Text>
@@ -199,6 +220,19 @@ const styles = StyleSheet.create({
     padding: 20,
     alignItems: 'center',
   },
+  header: {
+    flexDirection: 'row',
+    justifyContent: 'flex-end',
+    width: '100%',
+    padding: 16,
+  },
+  accountIcon: {
+    padding: 8,
+  },
+  accountIconText: {
+    fontSize: 24,
+    color: '#fff',
+  },
   centered: {
     flex: 1,
     justifyContent: 'center',
@@ -223,28 +257,28 @@ const styles = StyleSheet.create({
     shadowRadius: 8,
   },
   name: {
-    color: '#fff',
     fontSize: 28,
     fontWeight: '600',
     marginBottom: 10,
+    color: '#2e2e2e',
   },
   event: {
     fontSize: 18,
     fontStyle: 'italic',
     marginBottom: 12,
-    color: '#fff',
+    color: '#7e7e7e',
   },
   description: {
     fontSize: 16,
     textAlign: 'center',
-    color: '#fff',
+    color: '#333',
     marginBottom: 20,
     lineHeight: 24,
   },
   modified: {
     fontSize: 14,
     marginTop: 12,
-    color: '#fff',
+    color: '#888',
   },
   searchInput: {
     height: 40,
@@ -254,22 +288,16 @@ const styles = StyleSheet.create({
     paddingLeft: 10,
     marginBottom: 15,
     width: '100%',
-    color: '#fff',
   },
   section: {
     marginTop: 20,
     width: '100%',
-    color: '#E62429',
-    backgroundColor: '#fff',
-    padding: 16,
-    borderRadius: 8,
   },
   sectionTitle: {
-    textDecorationLine: 'underline',
     fontSize: 20,
     fontWeight: 'bold',
     marginBottom: 10, 
-    color: 'black',
+    color: '#2e2e2e',
   },
   item: {
     marginBottom: 10,
@@ -277,7 +305,7 @@ const styles = StyleSheet.create({
   itemTitle: {
     fontSize: 16,
     fontWeight: 'bold',
-    color: 'black',
+    color: '#2e2e2e',
   },
 });
 
