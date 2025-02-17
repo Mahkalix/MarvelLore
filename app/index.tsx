@@ -44,17 +44,26 @@ export default function Index() {
       <ImageBackground source={require('../assets/images/marvelbg.jpg')} style={styles.background} resizeMode="cover">
         <View style={styles.container}>
           <Image source={require('../assets/images/marvel.png')} style={styles.logo} />
-          <Text style={styles.title}>Welcome to the Marvel Universe</Text>
+          <Text style={styles.title}>Welcome !</Text>
           <Text style={styles.description}>
-            Dive into the world of Marvel characters, events, and epic stories.
+            Dive into the world of Avengers and X-men characters, events, and epic stories.
           </Text>
 
           {/* Bouton animé avec lien */}
           <Link href="/character-list" asChild>
             <TouchableOpacity>
               <Animated.View style={[styles.toggleButton, animatedGlowStyle]}>
-                <Text style={styles.toggleButtonText}>Click to explore Avengers and X-Men</Text>
+                <Text style={styles.toggleButtonText}>Click to explore</Text>
               </Animated.View>
+            </TouchableOpacity>
+          </Link>
+
+          {/* Bouton de connexion */}
+          <Link href="/login" asChild>
+            <TouchableOpacity style={styles.loginButtonContainer}>
+              <View style={styles.loginButton}>
+                <Text style={styles.loginButtonText}>Login</Text>
+              </View>
             </TouchableOpacity>
           </Link>
         </View>
@@ -66,25 +75,20 @@ export default function Index() {
 const styles = StyleSheet.create({
   webWrapper: {
     flex: 1,
-    ...Platform.select({
-      web: {
-        maxWidth: 500,
-        marginHorizontal: 'auto',
-      },
-    }),
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   background: {
     flex: 1,
     resizeMode: 'cover',
     overflow: 'hidden',
+    width: '100%',
   },
   container: {
     flex: 1,
-    backgroundColor: 'rgba(28, 31, 35, 0.8)',
     alignItems: 'center',
     justifyContent: 'center',
     padding: 16,
-    maxWidth: 500,
   },
   logo: {
     width: 200,
@@ -113,6 +117,23 @@ const styles = StyleSheet.create({
     borderRadius: 20,
   },
   toggleButtonText: {
+    fontSize: 18,
+    color: '#fff',
+    textAlign: 'center',
+    fontWeight: 'bold',
+  },
+  loginButtonContainer: {
+    position: 'absolute',
+    top: 80,
+    left: 20,
+  },
+  loginButton: {
+    paddingVertical: 10,
+    paddingHorizontal: 20,
+    backgroundColor: '#000',
+    borderRadius: 20,
+  },
+  loginButtonText: {
     fontSize: 18,
     color: '#fff',
     textAlign: 'center',

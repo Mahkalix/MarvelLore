@@ -1,9 +1,8 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, ActivityIndicator, Image, StyleSheet, ScrollView, TextInput } from 'react-native';
+import { View, Text, ActivityIndicator, Image, ImageBackground, StyleSheet, ScrollView, TextInput } from 'react-native';
 import { useLocalSearchParams } from 'expo-router'; // Pour récupérer les paramètres d'URL
 import { fetchAvengersAndXMenCharacters } from '../../services/marvelApi'; 
 import { getStoredData, storeData } from '../../utils/storage'; // Import storage utility
-import { MarvelCharacter } from './types'; 
 
 interface Url {
   type: string;
@@ -84,7 +83,8 @@ const CharacterDetail = () => {
   if (loading) {
     return (
       <View style={styles.centered}>
-        <ActivityIndicator size="large" color="#0000ff" />
+        <ActivityIndicator size="large" color="#E62429" />
+        <Text style={styles.loadingText}>Marvel API is slow, please wait a bit while we retrieve a lot of information.</Text>
       </View>
     );
   }
@@ -107,6 +107,10 @@ const CharacterDetail = () => {
   };
 
   return (
+     <ImageBackground 
+          source={require('../../assets/images/marvelbg.jpg')} 
+          style={styles.backgroundImage}
+        >
     <ScrollView contentContainerStyle={styles.container}>
       <Image source={{ uri: imageUrl }} style={styles.image} />
       <Text style={styles.modified}>Modified: {new Date(character.modified).toLocaleDateString()}</Text>
@@ -180,20 +184,31 @@ const CharacterDetail = () => {
         ))}
       </View>
     </ScrollView>
+       </ImageBackground>
   );
 };
 
 const styles = StyleSheet.create({
+  backgroundImage: {
+    flex: 1,
+    resizeMode: 'cover',
+    overflow: 'hidden',
+    width: '100%',
+  },
   container: {
     padding: 20,
-    backgroundColor: '#f4f4f7',
     alignItems: 'center',
   },
   centered: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: '#f4f4f7',
+  },
+  loadingText: {
+    color: 'black',
+    marginTop: 10,
+    textAlign: 'center',
+    paddingHorizontal: 20,
   },
   image: {
     width: 280,
@@ -208,28 +223,28 @@ const styles = StyleSheet.create({
     shadowRadius: 8,
   },
   name: {
+    color: '#fff',
     fontSize: 28,
     fontWeight: '600',
     marginBottom: 10,
-    color: '#2e2e2e',
   },
   event: {
     fontSize: 18,
     fontStyle: 'italic',
     marginBottom: 12,
-    color: '#7e7e7e',
+    color: '#fff',
   },
   description: {
     fontSize: 16,
     textAlign: 'center',
-    color: '#333',
+    color: '#fff',
     marginBottom: 20,
     lineHeight: 24,
   },
   modified: {
     fontSize: 14,
     marginTop: 12,
-    color: '#888',
+    color: '#fff',
   },
   searchInput: {
     height: 40,
@@ -239,16 +254,22 @@ const styles = StyleSheet.create({
     paddingLeft: 10,
     marginBottom: 15,
     width: '100%',
+    color: '#fff',
   },
   section: {
     marginTop: 20,
     width: '100%',
+    color: '#E62429',
+    backgroundColor: '#fff',
+    padding: 16,
+    borderRadius: 8,
   },
   sectionTitle: {
+    textDecorationLine: 'underline',
     fontSize: 20,
     fontWeight: 'bold',
     marginBottom: 10, 
-    color: '#2e2e2e',
+    color: 'black',
   },
   item: {
     marginBottom: 10,
@@ -256,7 +277,7 @@ const styles = StyleSheet.create({
   itemTitle: {
     fontSize: 16,
     fontWeight: 'bold',
-    color: '#2e2e2e',
+    color: 'black',
   },
 });
 
