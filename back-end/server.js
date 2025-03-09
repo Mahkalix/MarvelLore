@@ -67,15 +67,20 @@ app.post('/register', async (req, res) => {
 app.post('/login', async (req, res) => {
   try {
     const { email, password } = req.body;
+    console.log('Requête reçue !', req.body);
 
     // Vérifier si l'utilisateur existe
     const user = await prisma.user.findUnique({ where: { email } });
+    console.log('Utilisateur trouvé:', user);
+    
     if (!user) {
       return res.status(400).json({ error: 'Utilisateur non trouvé' });
     }
 
     // Vérifier le mot de passe
     const isValid = await bcrypt.compare(password, user.password);
+    console.log('Mot de passe valide ?', isValid);
+    
     if (!isValid) {
       return res.status(400).json({ error: 'Mot de passe incorrect' });
     }
